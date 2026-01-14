@@ -46,7 +46,7 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "w-full justify-between",
+            "w-full justify-between font-normal",
             !value && "text-muted-foreground"
           )}
         >
@@ -58,8 +58,8 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command
-          filter={(value, search) => {
-            const option = options.find((option) => option.value === value);
+          filter={(itemValue, search) => {
+            const option = options.find((option) => option.value === itemValue);
             if (option) {
               return option.label.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
             }
