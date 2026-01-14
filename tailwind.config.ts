@@ -1,4 +1,5 @@
 import type {Config} from 'tailwindcss';
+import { fontFamily } from 'tailwindcss/defaultTheme';
 
 export default {
   darkMode: ['class'],
@@ -10,8 +11,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Poppins', 'sans-serif'],
-        headline: ['Poppins', 'sans-serif'],
+        body: ['var(--font-manrope)', ...fontFamily.sans],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -49,6 +49,7 @@ export default {
         ring: 'hsl(var(--ring))',
       },
       borderRadius: {
+        xl: `calc(var(--radius) + 4px)`,
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 4px)',
         sm: 'calc(var(--radius) - 6px)',

@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ArrowRight, PawPrint, Upload } from "lucide-react";
+import { ArrowRight, Upload, Dog } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -18,15 +18,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import { PawsightLogo } from "@/components/icons";
 import { DOG_BREEDS } from "@/lib/breeds";
 import { Combobox } from "@/components/ui/combobox";
+import { Slider } from "@/components/ui/slider";
 
 const profileFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
-  breed: z.string({ required_error: "Please select a breed." }),
-  age: z.array(z.number()).min(1).max(1),
+  name: z.string().min(2, "Name must be at least 2 characters.").max(50),
+  breed: z.string({ required_error: "Please select your dog's breed." }),
+  age: z.array(z.number().min(0).max(30)).default([5]),
   photo: z.any().optional(),
 });
 
@@ -42,11 +42,12 @@ export default function WelcomePage() {
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: "",
-      age: [3],
+      age: [5],
     },
   });
 
   function onSubmit(data: ProfileFormValues) {
+    // Here you would typically save the profile data
     console.log("Profile submitted:", data);
     router.push("/dashboard");
   }
@@ -60,31 +61,33 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center gap-2 text-center">
-            <PawsightLogo className="h-12 w-12 text-primary" />
-            <h1 className="text-3xl font-bold">Create Your Dog's Profile</h1>
-            <p className="text-muted-foreground">This helps us personalize the insights for you.</p>
-        </div>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 p-4">
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardContent className="p-8">
+            <div className="mb-8 flex flex-col items-center gap-2 text-center">
+                <PawsightLogo className="h-12 w-12 text-primary" />
+                <h1 className="text-3xl font-bold tracking-tight">Tell Us About Your Pup</h1>
+                <p className="text-muted-foreground">This helps us personalize the AI analysis.</p>
+            </div>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="space-y-4">
                     <div className="flex flex-col items-center space-y-4">
                         <div className="relative">
-                            <label htmlFor="photo-upload" className="cursor-pointer">
-                                <div className="w-28 h-28 rounded-full bg-muted flex items-center justify-center border-2 border-dashed border-border overflow-hidden group">
+                            <label htmlFor="photo-upload" className="cursor-pointer group">
+                                <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-background overflow-hidden ring-2 ring-primary/50 group-hover:ring-primary transition-all">
                                 {photoPreview ? (
                                     <img src={photoPreview} alt="Dog preview" className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="text-center text-muted-foreground">
-                                        <Upload className="w-8 h-8 mx-auto" />
+                                    <div className="text-center text-muted-foreground p-2">
+                                        <Dog className="w-12 h-12 mx-auto text-primary/80" />
                                         <span className="text-xs">Upload Photo</span>
                                     </div>
                                 )}
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 p-1 bg-primary text-primary-foreground rounded-full shadow-md">
+                                    <Upload className="w-5 h-5" />
                                 </div>
                             </label>
                             <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
@@ -126,13 +129,16 @@ export default function WelcomePage() {
                     name="age"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Age: {field.value?.[0] ?? 0} years</FormLabel>
+                        <div className="flex justify-between items-center">
+                            <FormLabel>Age</FormLabel>
+                            <span className="text-sm font-medium">{field.value?.[0] ?? 0} {field.value?.[0] === 1 ? 'year' : 'years'} old</span>
+                        </div>
                         <FormControl>
                           <Slider
                             min={0}
                             max={25}
                             step={1}
-                            defaultValue={field.value}
+                            value={field.value}
                             onValueChange={field.onChange}
                           />
                         </FormControl>
@@ -140,15 +146,13 @@ export default function WelcomePage() {
                     )}
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            <Button type="submit" className="w-full" size="lg">
-              Create Profile <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </form>
-        </Form>
-      </div>
+                <Button type="submit" className="w-full" size="lg">
+                  Create Profile <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </form>
+            </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -2,33 +2,21 @@
   "placeholderImages": [
     {
       "id": "hero-dog",
-      "description": "Happy dog running in a field",
-      "imageUrl": "https://images.unsplash.com/photo-1534361960057-19889db9621e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxoYXBweSUyMGRvZ3xlbnwwfHx8fDE3NjgzMDAwMDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "description": "Happy dog running in a field with a warm, sunny background",
+      "imageUrl": "https://images.unsplash.com/photo-1598875706250-21fa76814725?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxkb2clMjBydW5uaW5nJTIwaW4lMjBzdW5ueSUyMGZpZWxkfGVufDB8fHx8MTc2ODQ4MjMwN3ww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "happy dog"
     },
     {
       "id": "dog-avatar",
-      "description": "Close-up of a golden retriever's face",
-      "imageUrl": "https://images.unsplash.com/photo-1626736637845-53045bb9695b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxnb2xkZW4lMjByZXRyaWV2ZXJ8ZW58MHx8fHwxNzY4MzQyMjI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "description": "Close-up of a friendly golden retriever's face",
+      "imageUrl": "https://images.unsplash.com/photo-1596492784533-41a38c991A7c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxnb2xkZW4lMjByZXRyaWV2ZXIlMjBoYXBweXxlbnwwfHx8fDE3NjgzODQxNDZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "golden retriever"
     },
     {
       "id": "report-thumb-1",
-      "description": "Dog playing with a ball",
-      "imageUrl": "https://images.unsplash.com/photo-1597046835715-16f81ac132c0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxkb2clMjBwbGF5aW5nfGVufDB8fHx8MTc2ODMyMDQxOHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "dog playing"
-    },
-    {
-      "id": "report-thumb-2",
-      "description": "Dog looking out a window",
-      "imageUrl": "https://images.unsplash.com/photo-1727130213822-56b888712a2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxkb2clMjB3aW5kb3d8ZW58MHx8fHwxNzY4NDAwMzE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "dog window"
-    },
-    {
-      "id": "report-thumb-3",
-      "description": "Dog sleeping on a couch",
-      "imageUrl": "https://images.unsplash.com/photo-1636910825807-171715240043?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkb2clMjBzbGVlcGluZ3xlbnwwfHx8fDE3NjgzODQwMzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "dog sleeping"
+      "description": "A dog looking intently at the camera, ready for analysis",
+      "imageUrl": "https://images.unsplash.com/photo-1588057037780-9de4f553c3c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxNXx8ZG9nJTIwbG9va2luZyUyMGF0JTIwY2FtZXJhfGVufDB8fHx8MTc2ODQ4MjQyMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "dog portrait"
     }
   ]
 }

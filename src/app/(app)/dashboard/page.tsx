@@ -3,14 +3,13 @@ import Link from "next/link";
 import {
   ArrowRight,
   BarChart2,
-  Heart,
-  Smile,
-  Zap,
-  Dog,
   Plus,
+  FileText,
+  Bone,
+  Dog,
+  Sparkles,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,49 +19,40 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { DogTailAnimation } from "@/components/icons";
 
-// Mock Data
+// This would come from user data
 const dogProfile = {
   name: "Buddy",
   breed: "Golden Retriever",
-  avatarUrl: PlaceHolderImages.find((img) => img.id === "dog-avatar")?.imageUrl || "https://picsum.photos/seed/1/100/100",
+  avatarUrl: PlaceHolderImages.find((img) => img.id === "dog-avatar")?.imageUrl,
 };
-
-const lastAnalysis = {
-  emotion: "Happy",
-  confidence: 87,
-  date: "Today, 2:15 PM",
-};
-
-const weeklyMood = {
-  mood: "Stable",
-  icon: Smile,
-};
-
-const recentReports = [
-  { id: 1, emotion: "Playful", date: "2024-07-20", confidence: 92, thumbnail: PlaceHolderImages.find((img) => img.id === "report-thumb-1")?.imageUrl || "https://picsum.photos/seed/2/300/200" },
-  { id: 2, emotion: "Anxious", date: "2024-07-19", confidence: 78, thumbnail: PlaceHolderImages.find((img) => img.id === "report-thumb-2")?.imageUrl || "https://picsum.photos/seed/3/300/200" },
-  { id: 3, emotion: "Relaxed", date: "2024-07-18", confidence: 95, thumbnail: PlaceHolderImages.find((img) => img.id === "report-thumb-3")?.imageUrl || "https://picsum.photos/seed/4/300/200" },
-];
 
 export default function DashboardPage() {
+  const hasReports = false; // This would be dynamic based on user data
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Hello, {dogProfile.name}'s friend!</h1>
-          <Button asChild>
-            <Link href="/analyze">
-              New Analysis <Plus className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Welcome back!</h1>
+          <p className="text-muted-foreground">Here's what's happening with {dogProfile.name}.</p>
+        </div>
+        <Button asChild>
+          <Link href="/analyze">
+            New Analysis <Plus className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="md:col-span-2 lg:col-span-1">
+        <Card className="flex flex-col justify-between">
           <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-            <Avatar className="h-16 w-16 border">
-              <AvatarImage src={dogProfile.avatarUrl} alt={dogProfile.name} data-ai-hint="golden retriever" />
-              <AvatarFallback>{dogProfile.name.charAt(0)}</AvatarFallback>
+            <Avatar className="h-16 w-16 border-2 border-primary">
+              {dogProfile.avatarUrl && <AvatarImage src={dogProfile.avatarUrl} alt={dogProfile.name} />}
+              <AvatarFallback className="text-2xl bg-secondary">
+                {dogProfile.name.charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div>
               <CardTitle>{dogProfile.name}</CardTitle>
@@ -75,63 +65,67 @@ export default function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Analysis</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-md font-medium flex items-center justify-between">
+              Last Analysis
+              <FileText className="h-5 w-5 text-muted-foreground" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {lastAnalysis.emotion}
-            </div>
-            <p className="text-xs text-muted-foreground">with {lastAnalysis.confidence}% confidence</p>
+            {hasReports ? (
+              <>
+                <div className="text-3xl font-bold">Happy</div>
+                <p className="text-sm text-muted-foreground">with 92% confidence</p>
+              </>
+            ) : (
+               <div className="text-center text-muted-foreground pt-4">
+                  <p>No analysis yet.</p>
+                  <p className="text-xs">Run one to see results!</p>
+               </div>
+            )}
           </CardContent>
         </Card>
+
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Weekly Mood</CardTitle>
-            <BarChart2 className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+             <CardTitle className="text-md font-medium flex items-center justify-between">
+              Total Analyses
+              <BarChart2 className="h-5 w-5 text-muted-foreground" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{weeklyMood.mood}</div>
-            <p className="text-xs text-muted-foreground">Your pup's mood has been consistent</p>
+             <div className="text-3xl font-bold">{hasReports ? 1 : 0}</div>
+             <p className="text-sm text-muted-foreground">reports generated</p>
           </CardContent>
         </Card>
       </div>
       
-      <div>
-        <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Recent Reports</h2>
-            <Button variant="ghost" asChild>
-                <Link href="/history">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
+      {hasReports ? (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold">Recent Reports</h2>
+              <Button variant="ghost" asChild>
+                  <Link href="/history">View All <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              </Button>
+          </div>
+          {/* Add report list here when data is available */}
+        </div>
+      ) : (
+        <Card className="text-center flex flex-col items-center justify-center p-8 lg:p-12 gap-4">
+            <DogTailAnimation className="w-24 h-24 text-primary" />
+            <h2 className="text-2xl font-bold mt-4">No Reports Yet!</h2>
+            <p className="text-muted-foreground max-w-sm">
+                It looks like you haven't analyzed your dog's behavior yet. Click the button below to get started and unlock insights into your furry friend's world.
+            </p>
+            <Button size="lg" className="mt-4" asChild>
+                <Link href="/analyze">
+                    <Sparkles className="mr-2 h-5 w-5" /> Start First Analysis
+                </Link>
             </Button>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {recentReports.map((report) => (
-              <Link href={`/report/${report.id}`} key={report.id}>
-                <Card className="overflow-hidden group w-full">
-                    <div className="relative h-48 w-full">
-                      <Image
-                        src={report.thumbnail}
-                        alt={`Report from ${report.date}`}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
-                        data-ai-hint="dog playing"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-0 left-0 p-4">
-                        <Badge variant="secondary">{report.emotion}</Badge>
-                      </div>
-                    </div>
-                    <CardHeader>
-                        <CardTitle className="text-lg">{report.date}</CardTitle>
-                        <CardDescription>{report.confidence}% confidence</CardDescription>
-                    </CardHeader>
-                </Card>
-              </Link>
-            ))}
-        </div>
-      </div>
+        </Card>
+      )}
     </div>
   );
 }

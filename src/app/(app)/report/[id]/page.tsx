@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -15,51 +19,91 @@ import {
   MessageSquare,
   Share2,
   Lightbulb,
-  ArrowRight
+  ArrowRight,
+  Heart,
+  Activity,
+  Dog,
+  Loader2
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import type { GenerateInsightsReportOutput } from "@/ai/flows/generate-insights-report";
+import { useToast } from "@/hooks/use-toast";
+import { PawsightLogo } from "@/components/icons";
 
-const mockReport = {
-  id: "1",
-  emotion: "Playful",
-  confidence: 92,
-  translation: "I'm bursting with energy and ready for some fun. Let's play a game!",
-  bodyLanguage: {
-    tail: { label: "Tail", value: "High wag", insight: "Excitement" },
-    ears: { label: "Ears", value: "Relaxed, forward", insight: "Curious" },
-    posture: { label: "Posture", value: "Play bow", insight: "Invitation to play" },
-    eyes: { label: "Eyes", value: "Soft gaze", insight: "Trusting and happy" },
-  },
-  healthVitals: {
-    gait: { label: "Gait Analysis", value: "Normal stride", status: "ok" },
-    eyeClarity: { label: "Eye Clarity", value: "Clear, no redness", status: "ok" },
-    breathing: { label: "Breathing", value: "Normal rate", status: "ok" },
-    skin: { label: "Skin Condition", value: "No visible irritation", status: "warning" },
-  },
-  urgency: { level: "green", percentage: 10, summary: "No immediate concerns detected." },
-  actionItems: [
-    "It's a perfect time for a walk or a game of fetch! Your dog is eager to play.",
-    "Try using interactive puzzle toys to challenge their mind and burn off energy.",
-    "Introduce a new trick or command during a training session while they are engaged.",
-    "Check the irritated skin area, it might be a minor allergy. Monitor for changes."
-  ],
+const emotionConfig: { [key: string]: { emoji: string, color: string, description: string } } = {
+  happy: { emoji: "😊", color: "text-green-500", description: "Your dog is feeling joyful and content." },
+  playful: { emoji: "🎾", color: "text-green-500", description: "Your dog is full of energy and wants to play!" },
+  anxious: { emoji: "😟", color: "text-yellow-500", description: "Your dog is feeling uneasy or worried." },
+  fear: { emoji: "😨", color: "text-orange-500", description: "Something is making your dog feel scared." },
+  aggressive: { emoji: "😠", color: "text-red-600", description: "Your dog is showing signs of aggression. Be cautious." },
+  pain: { emoji: "😣", color: "text-red-500", description: "Your dog might be in pain. Look for physical signs." },
+  neutral: { emoji: "😐", color: "text-gray-500", description: "Your dog is calm and observant." },
+  relaxed: { emoji: "😌", color: "text-blue-500", description: "Your dog is feeling calm and at ease." },
 };
 
-const emotionConfig = {
-  Playful: { emoji: "🎾", color: "text-green-500" },
-  Anxious: { emoji: "😟", color: "text-yellow-500" },
-  Relaxed: { emoji: "😌", color: "text-blue-500" },
-  Happy: { emoji: "😊", color: "text-pink-500" },
-  Pain: { emoji: "😣", color: "text-red-500" },
-  Neutral: { emoji: "😐", color: "text-gray-500" },
+const urgencyConfig = {
+  green: { color: "bg-green-500", text: "All Clear", description: "No immediate health concerns detected." },
+  yellow: { color: "bg-yellow-500", text: "Observation Recommended", description: "Keep an eye on the noted symptoms." },
+  red: { color: "bg-red-500", text: "Veterinary Check Recommended", description: "Consider consulting a vet for the noted concerns." },
 };
 
 export default function ReportPage({ params }: { params: { id: string } }) {
-  const report = mockReport;
+  const router = useRouter();
+  const { toast } = useToast();
+  const [report, setReport] = useState<GenerateInsightsReportOutput | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const storedReport = localStorage.getItem(`report-${params.id}`);
+      if (storedReport) {
+        setReport(JSON.parse(storedReport));
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Report not found",
+          description: "Could not load the analysis report.",
+        });
+        router.push("/history");
+      }
+    } catch (error) {
+      console.error("Failed to load report from localStorage", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "There was a problem loading the report.",
+      });
+    }
+    setLoading(false);
+  }, [params.id, router, toast]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-12rem)] flex-col items-center justify-center gap-4 text-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground">Fetching your Pawsight report...</p>
+      </div>
+    );
+  }
+
+  if (!report) {
+    return (
+       <div className="flex flex-col items-center justify-center text-center h-full gap-4 p-4">
+          <PawsightLogo className="w-24 h-24 text-destructive" />
+          <h2 className="text-2xl font-bold">Report Not Found</h2>
+          <p className="text-muted-foreground max-w-sm">We couldn't find the report you're looking for. It might have been removed or the link is incorrect.</p>
+          <Button asChild>
+            <Link href="/history">Go to History</Link>
+          </Button>
+      </div>
+    )
+  }
+
+  const eConfig = emotionConfig[report.emotion.toLowerCase() as keyof typeof emotionConfig] || emotionConfig.neutral;
+  const uConfig = urgencyConfig[report.health.urgency as keyof typeof urgencyConfig] || urgencyConfig.green;
   const reportImage = PlaceHolderImages.find((img) => img.id === 'report-thumb-1');
-  const eConfig = emotionConfig[report.emotion as keyof typeof emotionConfig] || emotionConfig.Neutral;
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,20 +116,28 @@ export default function ReportPage({ params }: { params: { id: string } }) {
                 alt={report.emotion} 
                 width={400} 
                 height={400} 
-                className="rounded-2xl object-cover aspect-square w-full"
+                className="rounded-2xl object-cover aspect-square w-full shadow-lg"
                 data-ai-hint="dog playing"
                 priority
               />
             }
         </div>
         <div className="flex-1 space-y-4">
-            <Badge variant="secondary">Report for July 21, 2024</Badge>
-            <h1 className="text-5xl font-bold tracking-tighter">{report.emotion} <span className="text-4xl">{eConfig.emoji}</span></h1>
-            <p className="text-xl text-muted-foreground italic">"{report.translation}"</p>
-            <div className="flex items-center gap-2">
-                <span className="font-semibold">Confidence:</span>
+            <Badge variant="secondary">Report from {new Date(parseInt(params.id)).toLocaleDateString()}</Badge>
+            <h1 className="text-5xl font-bold tracking-tighter flex items-center gap-2">{report.emotion} <span className="text-4xl">{eConfig.emoji}</span></h1>
+            <p className="text-lg text-muted-foreground">{eConfig.description}</p>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="p-4">
+                <p className="text-xl text-primary-foreground italic">"{report.translation}"</p>
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center gap-4 pt-2">
+                <div className="flex items-center gap-2 text-lg">
+                    <span className="font-semibold text-muted-foreground">Confidence:</span>
+                    <span className="font-bold text-foreground">{report.confidence}%</span>
+                </div>
                 <Progress value={report.confidence} className="w-32" />
-                <span>{report.confidence}%</span>
             </div>
             <div className="flex gap-2 pt-4">
                 <Button asChild><Link href={`/chat/${report.id}`}><MessageSquare className="mr-2 h-4 w-4" /> Ask AI Assistant</Link></Button>
@@ -100,13 +152,13 @@ export default function ReportPage({ params }: { params: { id: string } }) {
         <div className="lg:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Body Language Breakdown</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Dog className="text-primary"/> Body Language Breakdown</CardTitle>
                     <CardDescription>Understanding the non-verbal cues your dog is showing.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {Object.values(report.bodyLanguage).map((item, index) => (
                     <div key={index} className="p-4 bg-muted rounded-lg">
-                        <p className="font-semibold text-sm text-muted-foreground">{item.label}</p>
+                        <p className="font-semibold text-sm text-muted-foreground capitalize">{item.label}</p>
                         <p className="text-lg font-bold">{item.value}</p>
                         <p className="text-sm">{item.insight}</p>
                     </div>
@@ -134,7 +186,7 @@ export default function ReportPage({ params }: { params: { id: string } }) {
         <div className="lg:col-span-1 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Health Vitals Check</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Heart className="text-red-500" /> Health Vitals</CardTitle>
                 <CardDescription>A quick check on key health indicators.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -147,14 +199,18 @@ export default function ReportPage({ params }: { params: { id: string } }) {
                     {item.status === 'ok' ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <AlertTriangle className="h-6 w-6 text-yellow-500" />}
                   </div>
                 ))}
-                <Separator/>
-                <div>
-                  <p className="font-semibold text-sm mb-1">Urgency</p>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded-full ${report.urgency.level === 'green' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                    <p className="text-sm text-muted-foreground capitalize">{report.urgency.summary}</p>
-                  </div>
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader>
+                <CardTitle  className="flex items-center gap-2"><Activity className="text-blue-500"/> Urgency Level</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full ${uConfig.color}`}></div>
+                    <p className="text-lg font-bold">{uConfig.text}</p>
                 </div>
+                <p className="text-sm text-muted-foreground">{uConfig.description}</p>
               </CardContent>
             </Card>
         </div>
