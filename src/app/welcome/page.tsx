@@ -18,11 +18,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { DisclaimerFooter } from "@/components/disclaimer-footer";
 import { PawsightLogo } from "@/components/icons";
 import { DOG_BREEDS } from "@/lib/breeds";
+import { Combobox } from "@/components/ui/combobox";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -32,6 +32,8 @@ const profileFormSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+const breedOptions = DOG_BREEDS.map(breed => ({ label: breed, value: breed.toLowerCase() }));
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -103,20 +105,16 @@ export default function WelcomePage() {
                 control={form.control}
                 name="breed"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Breed</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a breed" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {DOG_BREEDS.map((breed) => (
-                          <SelectItem key={breed} value={breed}>{breed}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Combobox
+                      options={breedOptions}
+                      {...field}
+                      onChange={(value) => form.setValue("breed", value)}
+                      placeholder="Select a breed"
+                      searchPlaceholder="Search breeds..."
+                      emptyMessage="No breeds found."
+                    />
                     <FormMessage />
                   </FormItem>
                 )}
