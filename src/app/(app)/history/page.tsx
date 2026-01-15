@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { GenerateInsightsReportOutput } from "@/ai/flows/generate-insights-report";
-import { PawsightLogo } from "@/components/icons";
+import { DogTailAnimation } from "@/components/icons";
 
 const emotionConfig: { [key: string]: { color: string, emoji: string } } = {
   happy: { color: "bg-green-500", emoji: "😊" },
@@ -141,7 +141,7 @@ export default function HistoryPage() {
         </div>
       ) : (
          <Card className="text-center flex flex-col items-center justify-center p-8 lg:p-16 gap-4 border-dashed">
-            <PawsightLogo className="w-24 h-24 text-muted-foreground/50" />
+            <DogTailAnimation className="w-24 h-24 text-muted-foreground/50" />
             <h2 className="text-2xl font-bold mt-4">Your History is Empty</h2>
             <p className="text-muted-foreground max-w-sm">
                 No reports have been generated yet. Perform an analysis to start building your dog's emotional timeline!
