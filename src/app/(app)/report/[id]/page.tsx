@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -49,8 +50,7 @@ const urgencyConfig = {
   red: { color: "bg-red-500", text: "Veterinary Check Recommended", description: "Consider consulting a vet for the noted concerns." },
 };
 
-export default function ReportPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ReportPage({ params: { id } }: { params: { id: string } }) {
   const router = useRouter();
   const { toast } = useToast();
   const [report, setReport] = useState<GenerateInsightsReportOutput | null>(null);
@@ -220,3 +220,5 @@ export default function ReportPage({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+    
