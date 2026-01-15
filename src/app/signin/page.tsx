@@ -51,7 +51,7 @@ export default function SignInPage() {
       router.push("/dashboard");
     } catch (error) {
       console.error(error);
-      let description = "Please check your credentials and try again.";
+      let description = "An unexpected error occurred. Please try again.";
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           description = "Email or Password Incorrect";
