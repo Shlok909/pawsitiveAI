@@ -54,9 +54,7 @@ interface ReportPageProps {
   params: { id: string };
 }
 
-export default function ReportPage({ params }: ReportPageProps) {
-  const { id } = params;
-  
+export default function ReportPage({ params: { id } }: ReportPageProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [report, setReport] = useState<GenerateInsightsReportOutput | null>(null);
