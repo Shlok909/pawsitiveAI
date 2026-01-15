@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Video, Upload, Camera, Loader2, Info, Film, Sparkles, Dog, FileVideo, Image as ImageIcon } from "lucide-react";
+import { Video, Upload, Camera, Loader2, Sparkles, Dog } from "lucide-react";
 import { generateInsightsReport, GenerateInsightsReportInput } from "@/ai/flows/generate-insights-report";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFormContext } from "react-hook-form";
 
 const analysisSteps = [
   "Warming up the AI... sniffing out the details.",
@@ -28,19 +26,17 @@ export default function AnalyzePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  const [mediaChunks, setMediaChunks] = useState<Blob[]>([]);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // This would come from the user's profile, but we'll use a default for now.
-  const dogProfile = { breed: "Mixed Breed", age: 5 };
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const startAnalysis = async (mediaDataUri: string) => {
+  // This would come from the user's profile, but we'll use a default for now.
+  const dogProfile = { breed: "Golden Retriever", age: 5 };
+
+  const startAnalysis = async (mediaUrl: string) => {
     setIsAnalyzing(true);
     setAnalysisProgress(0);
     setCurrentStep(analysisSteps[0]);
@@ -63,7 +59,7 @@ export default function AnalyzePage() {
       }, 500);
 
       const input: GenerateInsightsReportInput = {
-        mediaDataUri: mediaDataUri,
+        mediaUrl: mediaUrl,
         breed: dogProfile.breed,
         age: dogProfile.age,
       };
@@ -74,6 +70,7 @@ export default function AnalyzePage() {
       setAnalysisProgress(100);
       
       const reportId = Date.now().toString();
+      // This is not ideal for production, but for now we'll use localStorage
       localStorage.setItem(`report-${reportId}`, JSON.stringify(report));
 
       toast({
@@ -95,102 +92,115 @@ export default function AnalyzePage() {
     }
   };
 
-  const handleStartRecording = useCallback(() => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'video/webm' });
-      
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          setMediaChunks((prev) => [...prev, event.data]);
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+
+    if (file.size > 100 * 1024 * 1024) { // 100MB limit
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please upload a file smaller than 100MB.",
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload`, true);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentCompleted = Math.round((event.loaded * 100) / event.total);
+        setUploadProgress(percentCompleted);
+      }
+    };
+
+    xhr.onload = async () => {
+      setIsUploading(false);
+      if (xhr.status === 200) {
+        const response = JSON.parse(xhr.responseText);
+        if (response.secure_url) {
+          await startAnalysis(response.secure_url);
+        } else {
+           toast({
+            variant: "destructive",
+            title: "Upload Failed",
+            description: "Could not get the media URL. Please try again.",
+          });
         }
-      };
-      
-      mediaRecorderRef.current.onstop = () => {
-        const mediaBlob = new Blob(mediaChunks, { type: 'video/webm' });
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          startAnalysis(base64String);
-        };
-        reader.readAsDataURL(mediaBlob);
-        setMediaChunks([]);
-      };
-      
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-      setRecordingTime(0);
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime((prev) => {
-          if (prev >= 15) {
-            handleStopRecording();
-            return 15;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    }
-  }, [mediaChunks]);
-
-  const handleStopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-    }
-    if (recordingIntervalRef.current) {
-      clearInterval(recordingIntervalRef.current);
-    }
-    setIsRecording(false);
-    if (recordingTime < 2) {
-       toast({
+      } else {
+        toast({
           variant: "destructive",
-          title: "Recording too short",
-          description: "Please record for at least 2 seconds.",
+          title: "Upload Failed",
+          description: `An error occurred during upload: ${xhr.statusText}`,
         });
-        setIsAnalyzing(false);
-    }
-    setRecordingTime(0);
-  }, [recordingTime, toast]);
+      }
+    };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    xhr.onerror = () => {
+      setIsUploading(false);
+       toast({
+        variant: "destructive",
+        title: "Upload Error",
+        description: "There was a network error. Please check your connection and try again.",
+      });
+    };
+
+    xhr.send(formData);
+  };
+  
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        startAnalysis(base64String);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const requestCamera = async () => {
-    if (hasCameraPermission) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      setHasCameraPermission(true);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Camera Access Denied',
-        description: 'Please enable camera permissions in your browser settings to use this app.',
-      });
+      handleFileUpload(file);
     }
   };
 
   useEffect(() => {
-    return () => {
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({video: true});
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+      }
+    };
+
+    getCameraPermission();
+    
+     return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
-  
+
+  if (isUploading) {
+    return (
+      <div className="flex h-[80vh] flex-col items-center justify-center gap-6 text-center p-4">
+        <div className="relative h-24 w-24">
+            <Loader2 className="absolute inset-0 h-full w-full animate-spin text-primary" />
+            <Upload className="absolute inset-0 m-auto h-12 w-12 text-primary" />
+        </div>
+        <h1 className="text-2xl font-bold">Uploading your media...</h1>
+        <p className="text-muted-foreground max-w-sm">Please wait while we send your file to the cloud.</p>
+        <Progress value={uploadProgress} className="w-full max-w-sm" />
+        <p className="font-semibold">{Math.round(uploadProgress)}%</p>
+      </div>
+    );
+  }
 
   if (isAnalyzing) {
     return (
@@ -207,96 +217,79 @@ export default function AnalyzePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Analysis Lab</h1>
-        <p className="text-muted-foreground">Capture or upload a moment to decode your dog's feelings.</p>
-      </div>
-      
-      <Tabs defaultValue="record" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="record"><Video className="mr-2 h-4 w-4" />Record</TabsTrigger>
-          <TabsTrigger value="upload"><Upload className="mr-2 h-4 w-4" />Upload</TabsTrigger>
-        </TabsList>
-        <TabsContent value="record">
-          <Card>
-            <CardContent className="p-4 md:p-6 text-center">
-                <Card className="relative aspect-video w-full overflow-hidden border-2 border-dashed mb-4">
-                  <video
-                    ref={videoRef}
-                    className="h-full w-full object-cover"
-                    autoPlay
-                    playsInline
-                    muted
-                  />
-                  {hasCameraPermission === null && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 text-center">
-                          <Camera className="h-12 w-12 mb-4 text-primary" />
-                          <h2 className="text-xl font-bold">Ready to Record?</h2>
-                          <p className="mb-4">Click below to enable your camera.</p>
-                          <Button onClick={requestCamera}>Enable Camera</Button>
-                      </div>
-                  )}
-                  {hasCameraPermission === false && (
-                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-white p-4 text-center">
-                          <Camera className="h-12 w-12 mb-4 text-destructive" />
-                          <h2 className="text-xl font-bold">Camera Access Denied</h2>
-                          <p>Please enable camera permissions in your browser settings.</p>
-                      </div>
-                  )}
-                  {isRecording && (
-                    <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-destructive px-3 py-1 text-white animate-pulse">
-                      <Film className="h-4 w-4" />
-                      <span className="font-mono text-sm">REC {String(recordingTime).padStart(2, '0')}s</span>
+    <div className="flex flex-col gap-8">
+        <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight">Analysis Lab</h1>
+            <p className="text-muted-foreground">How would you like to analyze your dog today?</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full">
+            <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary/10 rounded-lg">
+                           <Video className="h-6 w-6 text-primary" />
+                        </div>
+                        <h2 className="text-xl font-semibold">Record Live Video</h2>
                     </div>
-                  )}
-                </Card>
-                <Button
-                  size="lg"
-                  className="h-auto py-4 text-base w-full"
-                  onMouseDown={handleStartRecording}
-                  onMouseUp={handleStopRecording}
-                  onTouchStart={handleStartRecording}
-  onTouchEnd={handleStopRecording}
-                  disabled={!hasCameraPermission || isAnalyzing}
-              >
-                <div className="flex flex-col items-center justify-center gap-1">
-                  <div className="flex items-center gap-2">
-                      <Video className="h-5 w-5" />
-                      <span>{isRecording ? "Recording..." : (hasCameraPermission ? "Hold to Record" : "Record Video")}</span>
-                  </div>
-                  {hasCameraPermission && <span className="text-xs font-normal text-primary-foreground/80">Hold for at least 2s</span>}
-                </div>
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="upload">
-          <Card>
-            <CardContent className="p-4 md:p-6 text-center">
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <div className="border-2 border-dashed border-muted rounded-lg p-12 flex flex-col items-center justify-center hover:bg-muted/50 transition-colors">
-                  <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="font-semibold">Click to upload</p>
-                  <p className="text-sm text-muted-foreground">or drag and drop a file</p>
-                  <p className="text-xs text-muted-foreground mt-2">Video (MP4, MOV) or Photo (JPG, PNG)</p>
-                </div>
-                <input id="file-upload" type="file" accept="video/*,image/*" className="hidden" onChange={handleFileUpload} disabled={isAnalyzing} />
-              </label>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      <Alert variant="default" className="bg-primary/5 border-primary/10">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <AlertTitle>Analysis Tip</AlertTitle>
-        <AlertDescription>
-          For best results, make sure your dog is clearly visible. Good lighting and a 5-10 second clip work wonders!
-        </AlertDescription>
-      </Alert>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
+                        <video ref={videoRef} className="h-full w-full object-cover" autoPlay playsInline muted />
+                        {!hasCameraPermission && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 p-4 text-center text-white">
+                                <Camera className="h-8 w-8 mb-2" />
+                                <p className="text-sm">Enable camera access to record</p>
+                            </div>
+                        )}
+                    </div>
+                    <Button size="lg" className="w-full" disabled={!hasCameraPermission}>
+                        <Camera className="mr-2 h-5 w-5" /> Start Recording
+                    </Button>
+                </CardContent>
+            </Card>
+            
+            <Card className="hover:shadow-lg transition-shadow">
+                 <CardHeader>
+                    <div className="flex items-center gap-4">
+                         <div className="p-3 bg-primary/10 rounded-lg">
+                           <Upload className="h-6 w-6 text-primary" />
+                        </div>
+                        <h2 className="text-xl font-semibold">Upload Media</h2>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex flex-col items-center justify-center aspect-video w-full rounded-lg border-2 border-dashed cursor-pointer hover:bg-muted/50 hover:border-primary transition-colors"
+                    >
+                        <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="font-semibold">Click to upload</p>
+                        <p className="text-sm text-muted-foreground">Video or Photo</p>
+                    </div>
+                     <input 
+                        ref={fileInputRef}
+                        id="file-upload" 
+                        type="file" 
+                        accept="video/*,image/*" 
+                        className="hidden" 
+                        onChange={handleFileSelect} 
+                        disabled={isUploading || isAnalyzing} 
+                    />
+                    <Button size="lg" className="w-full" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-5 w-5" /> Choose a file
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+
+        <Alert variant="default" className="max-w-4xl mx-auto bg-primary/5 border-primary/20">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <AlertTitle>Analysis Tip</AlertTitle>
+            <AlertDescription>
+                For best results, make sure your dog is clearly visible. Good lighting and a 5-10 second clip work wonders!
+            </AlertDescription>
+        </Alert>
     </div>
   );
 }
-
-    

@@ -12,10 +12,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateInsightsReportInputSchema = z.object({
-  mediaDataUri: z
+  mediaUrl: z
     .string()
+    .url()
     .describe(
-      "A video or image of a dog, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A public URL to a video or image of a dog."
     ),
   breed: z.string().describe('The breed of the dog.'),
   age: z.number().describe('The age of the dog in years.'),
@@ -61,7 +62,7 @@ const generateInsightsReportPrompt = ai.definePrompt({
   name: 'generateInsightsReportPrompt',
   input: {schema: GenerateInsightsReportInputSchema},
   output: {schema: GenerateInsightsReportOutputSchema},
-  prompt: `Analyze this dog video/image as veterinary behaviorist. Dog details: BREED: {{{breed}}}, AGE: {{{age}}}.\n\nReturn JSON only:\n{\n  "emotion": "happy|anxious|fear|aggressive|pain|neutral",
+  prompt: `Analyze this dog video/image as veterinary behaviorist. Dog details: BREED: {{{breed}}}, AGE: {{{age}}}.\n\nMedia: {{media url=mediaUrl}}\n\nReturn JSON only:\n{\n  "emotion": "happy|anxious|fear|aggressive|pain|neutral",
   "confidence": 87,
   "translation": "Human readable message",
   "body_language": {\n    "tail": "high_wag|low|still|tucked",
@@ -82,10 +83,7 @@ const generateInsightsReportFlow = ai.defineFlow(
     outputSchema: GenerateInsightsReportOutputSchema,
   },
   async input => {
-    const {output} = await generateInsightsReportPrompt({
-      ...input,
-      mediaDataUri: input.mediaDataUri,
-    });
+    const {output} = await generateInsightsReportPrompt(input);
     return output!;
   }
 );
