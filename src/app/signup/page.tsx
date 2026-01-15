@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -50,13 +51,20 @@ export default function SignUpPage() {
       router.push("/dashboard");
     } catch (error) {
       console.error(error);
+      
       let title = "An unknown error occurred.";
       let description = "Please try again.";
+      let action;
 
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/email-already-in-use') {
           title = "User already exists.";
-          description = "Please sign in instead.";
+          description = "An account with this email is already registered.";
+          action = (
+             <Button variant="secondary" size="sm" onClick={() => router.push('/signin')}>
+              Sign In
+            </Button>
+          )
         } else {
           title = "Sign-up failed";
           description = error.message;
@@ -67,6 +75,7 @@ export default function SignUpPage() {
         variant: "destructive",
         title: title,
         description: description,
+        action: action,
       });
     } finally {
       setIsLoading(false);
