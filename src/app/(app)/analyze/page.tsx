@@ -29,11 +29,13 @@ export default function AnalyzePage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // This would come from the user's profile, but we'll use a default for now.
+  // This would come from user's profile, but we'll use a default for now.
   const dogProfile = { breed: "Golden Retriever", age: 5 };
 
   const startAnalysis = async (mediaUrl: string) => {
@@ -109,10 +111,10 @@ export default function AnalyzePage() {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+    formData.append('upload_preset', "PawsitiveAI");
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/video/upload`, true);
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/ddkyscswb/video/upload`, true);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -162,8 +164,8 @@ export default function AnalyzePage() {
     }
   };
 
-  useEffect(() => {
-    const getCameraPermission = async () => {
+  const enableCamera = async () => {
+      if (hasCameraPermission) return;
       try {
         const stream = await navigator.mediaDevices.getUserMedia({video: true});
         setHasCameraPermission(true);
@@ -174,11 +176,40 @@ export default function AnalyzePage() {
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
+        toast({
+          variant: "destructive",
+          title: "Camera Access Denied",
+          description: "Please enable camera permissions in your browser settings to use this feature.",
+        });
       }
     };
-
-    getCameraPermission();
     
+   const handleStartRecording = () => {
+    if (videoRef.current?.srcObject) {
+      setIsRecording(true);
+      const stream = videoRef.current.srcObject as MediaStream;
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const videoFile = new File([blob], 'recording.webm', { type: 'video/webm' });
+        handleFileUpload(videoFile);
+      };
+      mediaRecorderRef.current.start();
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  useEffect(() => {
      return () => {
       if (videoRef.current && videoRef.current.srcObject) {
         const stream = videoRef.current.srcObject as MediaStream;
@@ -236,16 +267,34 @@ export default function AnalyzePage() {
                 <CardContent className="space-y-4">
                     <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
                         <video ref={videoRef} className="h-full w-full object-cover" autoPlay playsInline muted />
-                        {!hasCameraPermission && (
+                        {hasCameraPermission === false && (
+                           <Alert variant="destructive" className="absolute bottom-2 left-2 right-2">
+                              <AlertTitle>Camera Access Denied</AlertTitle>
+                              <AlertDescription>
+                                Please enable camera permissions in your browser settings.
+                              </AlertDescription>
+                            </Alert>
+                        )}
+                         {hasCameraPermission === null && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 p-4 text-center text-white">
                                 <Camera className="h-8 w-8 mb-2" />
-                                <p className="text-sm">Enable camera access to record</p>
+                                <p className="font-semibold">Camera is off</p>
+                                <Button variant="secondary" size="sm" className="mt-2" onClick={enableCamera}>
+                                    Enable Camera
+                                </Button>
                             </div>
                         )}
                     </div>
-                    <Button size="lg" className="w-full" disabled={!hasCameraPermission}>
+                     {isRecording ? (
+                      <Button size="lg" className="w-full" onClick={handleStopRecording} variant="destructive">
+                        <div className="w-4 h-4 rounded-full bg-white animate-pulse mr-2"></div>
+                        Stop Recording
+                      </Button>
+                    ) : (
+                      <Button size="lg" className="w-full" onClick={handleStartRecording} disabled={!hasCameraPermission || isUploading || isAnalyzing}>
                         <Camera className="mr-2 h-5 w-5" /> Start Recording
-                    </Button>
+                      </Button>
+                    )}
                 </CardContent>
             </Card>
             
