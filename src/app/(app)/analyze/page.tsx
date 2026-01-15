@@ -113,8 +113,12 @@ export default function AnalyzePage() {
     formData.append('file', file);
     formData.append('upload_preset', "PawsitiveAI");
 
+    const isImage = file.type.startsWith('image/');
+    const resourceType = isImage ? 'image' : 'video';
+    const uploadUrl = `https://api.cloudinary.com/v1_1/ddkyscswb/${resourceType}/upload`;
+    
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `https://api.cloudinary.com/v1_1/ddkyscswb/video/upload`, true);
+    xhr.open('POST', uploadUrl, true);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
