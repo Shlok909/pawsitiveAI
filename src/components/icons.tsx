@@ -12,13 +12,12 @@ export const PawsightLogo = (props: React.SVGProps<SVGSVGElement>) => (
         strokeLinejoin="round"
         {...props}
     >
-        <path d="M14.5 7.5c.5.5.5 1.5 0 2" />
-        <path d="M9.5 7.5c-.5.5-.5 1.5 0 2" />
-        <path d="M12 18s2-4 4-4 4 4 4 4" />
-        <path d="M12 18s-2-4-4-4-4 4-4 4" />
-        <path d="M12 18v-2" />
-        <path d="M10 12c.5-1 2-1 3 0" />
-        <path d="M20 12c0-4.42-3.58-8-8-8s-8 3.58-8 8c0 2.4.98 4.63 2.6 6.2" />
+        <path d="M12 12a3 3 0 1 0-3-3" />
+        <path d="M18 12a3 3 0 1 0-3-3" />
+        <path d="M12 12a3 3 0 1 0 3 3" />
+        <path d="M6 12a3 3 0 1 0 3 3" />
+        <path d="M12 2a10 10 0 0 0-3.5 19.3" />
+        <path d="M15.5 21.3a10 10 0 0 0 0-18.6" />
     </svg>
 );
 
