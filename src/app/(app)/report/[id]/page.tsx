@@ -220,5 +220,3 @@ export default function ReportPage({ params: { id } }: { params: { id: string } 
     </div>
   );
 }
-
-    
