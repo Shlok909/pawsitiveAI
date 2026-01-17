@@ -7,9 +7,10 @@ import {
   updateProfile,
   type User,
 } from "firebase/auth";
-import { auth } from "./client";
+import { auth, storage } from "./client";
 import type { SignUpFormValues, SignInFormValues } from "@/types/auth";
 import { FirebaseError } from "firebase/app";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export async function signUp(
   data: SignUpFormValues
@@ -21,8 +22,17 @@ export async function signUp(
   );
   const user = userCredential.user;
 
+  let photoURL: string | undefined = undefined;
+
+  if (data.photo && data.photo instanceof File) {
+    const storageRef = ref(storage, `profile-photos/${user.uid}`);
+    const uploadTask = await uploadBytes(storageRef, data.photo);
+    photoURL = await getDownloadURL(uploadTask.ref);
+  }
+
   await updateProfile(user, {
     displayName: data.name,
+    photoURL: photoURL,
   });
 
   return user;
