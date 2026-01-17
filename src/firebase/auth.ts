@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -40,7 +39,7 @@ export async function signIn(
     );
     return userCredential.user;
   } catch (error) {
-    // Re-throw the error to be handled by the calling component
+    // Re-throw the original error to be handled by the UI component
     throw error;
   }
 }
